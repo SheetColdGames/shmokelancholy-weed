@@ -16,6 +16,7 @@
 package me.sheetcoldgames.shmokeprototype;
 
 import me.sheetcoldgames.shmokeprototype.controller.GameController;
+import me.sheetcoldgames.shmokeprototype.controller.GameController.GAME_STATES;
 import me.sheetcoldgames.shmokeprototype.engine.ShmokeCamera;
 
 import com.badlogic.gdx.Gdx;
@@ -42,6 +43,7 @@ public class GameRenderer {
 		sr.begin(ShapeType.Filled);
 		drawStars(sr, camera);
 		drawShips(sr, camera);
+		drawBullets(sr, camera);
 		sr.end();
 		
 		sb.setProjectionMatrix(camera.combined);
@@ -86,10 +88,12 @@ public class GameRenderer {
 				currentStarColor.b > STAR_COLOR.b - .07f) {
 			fadingOut = true;
 		}
-		if (fadingOut) {
-			currentStarColor.lerp(BACKGROUND_COLOR, .04f);
-		} else {
-			currentStarColor.lerp(STAR_COLOR, .04f);
+		if (con.state != GAME_STATES.PAUSE) {
+			if (fadingOut) {
+				currentStarColor.lerp(BACKGROUND_COLOR, .04f);
+			} else {
+				currentStarColor.lerp(STAR_COLOR, .04f);
+			}
 		}
 		sr.setColor(currentStarColor);
 		for (int k = 0; k < con.stars.length; k++) {
@@ -102,5 +106,13 @@ public class GameRenderer {
 	private void drawShips(ShapeRenderer sr, ShmokeCamera camera) {
 		sr.setColor(PLAYER_COLOR);
 		sr.circle(con.playerShip.pos.x, con.playerShip.pos.y, con.playerShip.radius, 16);
+	}
+	
+	private void drawBullets(ShapeRenderer sr, ShmokeCamera camera) {
+		sr.setColor(Color.WHITE);
+		System.out.println(con.playerBullets.size());
+		for (int k = 0; k < con.playerBullets.size(); k++) {
+			sr.circle(con.playerBullets.get(k).pos.x, con.playerBullets.get(k).pos.y, con.playerBullets.get(k).radius, 16);
+		}
 	}
 }

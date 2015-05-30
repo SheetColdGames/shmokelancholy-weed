@@ -21,7 +21,7 @@ public class Bullet {
 	public Vector2 pos;
 	public Vector2 vel;
 	
-	float radius;
+	public float radius;
 	
 	public int damage;
 	

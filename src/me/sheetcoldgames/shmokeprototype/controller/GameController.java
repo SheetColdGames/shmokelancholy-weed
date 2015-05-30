@@ -22,6 +22,7 @@ import me.sheetcoldgames.shmokeprototype.engine.Entity;
 import me.sheetcoldgames.shmokeprototype.engine.MenuItem;
 import me.sheetcoldgames.shmokeprototype.engine.ShmokeCamera;
 
+import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -46,8 +47,8 @@ public class GameController {
 	public ArrayList<Bullet> playerBullets;
 	public ArrayList<Bullet> enemyBullets;
 	
-	enum GAME_STATES {MENU, GAME, WIN, LOSE, PAUSE};
-	GAME_STATES state = GAME_STATES.MENU;
+	public enum GAME_STATES {MENU, GAME, WIN, LOSE, PAUSE};
+	public GAME_STATES state = GAME_STATES.MENU;
 	
 	// Menu items
 	public MenuItem snoopPortrait;
@@ -111,17 +112,19 @@ public class GameController {
 		stateTime += dt;
 		
 		handleInput(playerShip, camera, input, dt);
-		updateBackground(camera, .3f);
+		updateBullets(dt, camera);
 		if (state == GAME_STATES.MENU) {
 			// From MENU, we can call GAME
 			moveMenu(true, dt);
 			movePause(false, dt);
+			updateBackground(camera, .3f);
 		} else if (state == GAME_STATES.GAME) {
 			// from GAME, we can call PAUSE, WIN or LOSE
 			// move the menu away
 			moveMenu(false, dt);
 			movePause(false, dt);
-			updateEntities();
+			updateEntities(camera);
+			updateBackground(camera, .3f);
 		} else if (state == GAME_STATES.PAUSE) {
 			// from PAUSE, we can only call GAME
 			moveMenu(false, dt);
@@ -131,7 +134,6 @@ public class GameController {
 		} else if (state == GAME_STATES.WIN) {
 			// from WIN, we can only call MENU
 		}
-		
 		camera.update();
 	}
 	
@@ -142,16 +144,6 @@ public class GameController {
 	private void handleInput(Entity player, ShmokeCamera camera, Input input, float dt) {
 		if (state == GAME_STATES.MENU) {
 			menuInput(input);
-			if (input.buttons[Input.SHOOT] && !shootPressed) {
-				toggleMenu = !toggleMenu;
-				if (toggleMenu) {
-					state = GAME_STATES.MENU;
-				} else
-					state = GAME_STATES.GAME;
-				shootPressed = true;
-			} else if (!input.buttons[Input.SHOOT]) {
-				shootPressed = false;
-			}
 		} else if (state == GAME_STATES.GAME) {
 			gameInput(player, input, dt);
 		} else if (state == GAME_STATES.PAUSE) {
@@ -169,6 +161,7 @@ public class GameController {
 	}
 	
 	float playerAcc = 2.3f;
+	boolean fireBullets;
 	
 	private void gameInput(Entity player, Input input, float dt) {
 		if (input.buttons[Input.UP]) {
@@ -185,6 +178,14 @@ public class GameController {
 			player.vel.x -= playerAcc * dt;
 		} else {
 			player.vel.x = MathUtils.lerp(player.vel.x, 0f, .23f);
+		}
+		
+		if (input.buttons[Input.SHOOT] && !shootPressed) {
+			shootPressed = true;
+			fireBullets = true;
+		} else if (!input.buttons[Input.SHOOT]) {
+			shootPressed = false;
+			fireBullets = false;
 		}
 		
 		if (input.buttons[Input.ESCAPE] && !escapePressed) {
@@ -239,13 +240,40 @@ public class GameController {
 	
 	float maxSpeed = .32f;
 	
-	private void updateEntities() {
+	private void updateEntities(ShmokeCamera camera) {
 		// clamping the velocity
 		playerShip.vel.x = MathUtils.clamp(playerShip.vel.x, -maxSpeed, maxSpeed);
 		playerShip.vel.y = MathUtils.clamp(playerShip.vel.y, -maxSpeed, maxSpeed);
 		
 		playerShip.pos.x += playerShip.vel.x;
 		playerShip.pos.y += playerShip.vel.y;
+		
+		playerShip.pos.x = MathUtils.clamp(playerShip.pos.x, 
+				camera.position.x-camWidth/2f+playerShip.radius, 
+				camera.position.x+camWidth/2f-playerShip.radius);
+		playerShip.pos.y = MathUtils.clamp(playerShip.pos.y, 
+				camera.position.y-camHeight/2f+playerShip.radius, 
+				camera.position.y+camHeight/2f-playerShip.radius);
+	}
+	
+	float playerBulletStateTime;
+	
+	private void updateBullets(float dt, ShmokeCamera camera) {
+		playerBulletStateTime += dt;
+		
+		if (fireBullets && playerBulletStateTime > .07f) {
+			playerBullets.add(new Bullet(playerShip.pos.x, playerShip.pos.y+playerShip.radius, 0f, .7f, .5f, 1));
+			playerBulletStateTime = 0f;
+		}
+		
+		for (int k = 0; k < playerBullets.size(); k++) {
+			playerBullets.get(k).updatePosition(dt);
+			if (playerBullets.get(k).pos.y > camera.position.y + camHeight/2f) {
+				playerBullets.remove(k);
+				if (playerBullets.isEmpty()) { break; }
+				--k;
+			}
+		}
 	}
 	
 	private void updateBackground(ShmokeCamera camera, float amnt) {
