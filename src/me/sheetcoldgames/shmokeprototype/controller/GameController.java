@@ -112,9 +112,10 @@ public class GameController {
 		stateTime += dt;
 		
 		handleInput(playerShip, camera, input, dt);
-		updateBullets(dt, camera);
+		updateBullets(dt, camera, state == GAME_STATES.PAUSE);
 		if (state == GAME_STATES.MENU) {
 			// From MENU, we can call GAME
+			resetGame();
 			moveMenu(true, dt);
 			movePause(false, dt);
 			updateBackground(camera, .3f);
@@ -135,6 +136,22 @@ public class GameController {
 			// from WIN, we can only call MENU
 		}
 		camera.update();
+	}
+	
+	private void resetGame() {
+		// set all the variables to false
+		shootPressed = false;
+		escapePressed = false;
+		fireBullets = false;
+		
+		// let's set all the player's bullet to hit
+		for (int k = 0; k < playerBullets.size(); k++) {
+			playerBullets.get(k).hit = true;
+		}
+		// let's set all the enemies bullets to hit
+		for (int k = 0; k < enemyBullets.size(); k++) {
+			enemyBullets.get(k).hit = true;
+		}
 	}
 	
 	boolean shootPressed = false;
@@ -258,17 +275,20 @@ public class GameController {
 	
 	float playerBulletStateTime;
 	
-	private void updateBullets(float dt, ShmokeCamera camera) {
+	private void updateBullets(float dt, ShmokeCamera camera, boolean paused) {
 		playerBulletStateTime += dt;
 		
-		if (fireBullets && playerBulletStateTime > .07f) {
+		if (fireBullets && playerBulletStateTime > .07f && !paused) {
 			playerBullets.add(new Bullet(playerShip.pos.x, playerShip.pos.y+playerShip.radius, 0f, .7f, .5f, 1));
 			playerBulletStateTime = 0f;
 		}
 		
 		for (int k = 0; k < playerBullets.size(); k++) {
-			playerBullets.get(k).updatePosition(dt);
-			if (playerBullets.get(k).pos.y > camera.position.y + camHeight/2f) {
+			if (!paused) {
+				playerBullets.get(k).update(dt, enemies);
+			}
+			
+			if (playerBullets.get(k).damageOffset > 1f || (playerBullets.get(k).pos.y > camera.position.y + camHeight/2f)) {
 				playerBullets.remove(k);
 				if (playerBullets.isEmpty()) { break; }
 				--k;

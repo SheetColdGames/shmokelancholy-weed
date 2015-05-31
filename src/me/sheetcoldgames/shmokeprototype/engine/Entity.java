@@ -20,6 +20,7 @@ import com.badlogic.gdx.math.Vector2;
 public class Entity {
 	public Vector2 pos;
 	public Vector2 vel;
+	public boolean hit;
 	
 	public float radius;
 	

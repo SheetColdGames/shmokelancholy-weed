@@ -24,7 +24,7 @@ public class MenuItem {
 	public Vector2 pos;
 	public Texture sprite;
 	public float rotation;
-	float initialStateTime;
+	public float initialStateTime;
 	public float stateTime;
 	public float scaleLimit;
 	

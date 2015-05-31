@@ -17,6 +17,7 @@ package me.sheetcoldgames.shmokeprototype;
 
 import me.sheetcoldgames.shmokeprototype.controller.GameController;
 import me.sheetcoldgames.shmokeprototype.controller.GameController.GAME_STATES;
+import me.sheetcoldgames.shmokeprototype.engine.Bullet;
 import me.sheetcoldgames.shmokeprototype.engine.ShmokeCamera;
 
 import com.badlogic.gdx.Gdx;
@@ -43,6 +44,9 @@ public class GameRenderer {
 		sr.begin(ShapeType.Filled);
 		drawStars(sr, camera);
 		drawShips(sr, camera);
+		sr.end();
+		
+		sr.begin(ShapeType.Line);
 		drawBullets(sr, camera);
 		sr.end();
 		
@@ -111,8 +115,18 @@ public class GameRenderer {
 	private void drawBullets(ShapeRenderer sr, ShmokeCamera camera) {
 		sr.setColor(Color.WHITE);
 		System.out.println(con.playerBullets.size());
-		for (int k = 0; k < con.playerBullets.size(); k++) {
-			sr.circle(con.playerBullets.get(k).pos.x, con.playerBullets.get(k).pos.y, con.playerBullets.get(k).radius, 16);
+		for (Bullet bullet : con.playerBullets) {
+			if (bullet.hit) {
+				float r = bullet.radius - bullet.damageOffset * (bullet.radius);
+				// draw four circles indicating damage
+				sr.circle(bullet.pos.x + bullet.damageOffset, bullet.pos.y + bullet.damageOffset, r, 16);
+				sr.circle(bullet.pos.x - bullet.damageOffset, bullet.pos.y + bullet.damageOffset, r, 16);
+				sr.circle(bullet.pos.x + bullet.damageOffset, bullet.pos.y - bullet.damageOffset, r, 16);
+				sr.circle(bullet.pos.x - bullet.damageOffset, bullet.pos.y - bullet.damageOffset, r, 16);
+			} else {
+				// draw only the circle of the bullet
+				sr.circle(bullet.pos.x, bullet.pos.y, bullet.radius, 16);
+			}
 		}
 	}
 }

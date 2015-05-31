@@ -15,6 +15,8 @@
  */
 package me.sheetcoldgames.shmokeprototype.engine;
 
+import java.util.ArrayList;
+
 import com.badlogic.gdx.math.Vector2;
 
 public class Bullet {
@@ -24,6 +26,8 @@ public class Bullet {
 	public float radius;
 	
 	public int damage;
+	public boolean hit;
+	public float damageOffset;
 	
 	public Bullet(float x, float y, float vx, float vy, float r, int dmg) {
 		pos = new Vector2(x, y);
@@ -31,6 +35,22 @@ public class Bullet {
 		
 		radius = r;
 		damage = dmg;
+		hit = false;
+	}
+	
+	public void update(float dt, ArrayList<Entity> enemies) {
+		// check if we hit anyone
+		for (Entity ent: enemies) {
+			if (ent.overlaps(pos.x, pos.y, radius)) {
+				ent.hit = true;
+				hit = true;
+			}
+		}
+		if (!hit) {
+			updatePosition(dt);
+		} else {
+			damageOffset += dt;
+		}
 	}
 	
 	public void updatePosition(float dt) {
