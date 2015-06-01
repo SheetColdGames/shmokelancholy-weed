@@ -19,6 +19,7 @@ import me.sheetcoldgames.shmokeprototype.controller.GameController;
 import me.sheetcoldgames.shmokeprototype.controller.GameController.GAME_STATES;
 import me.sheetcoldgames.shmokeprototype.engine.Bullet;
 import me.sheetcoldgames.shmokeprototype.engine.ShmokeCamera;
+import me.sheetcoldgames.shmokeprototype.engine.Entity.ENTITY_STATE;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
@@ -109,7 +110,22 @@ public class GameRenderer {
 	
 	private void drawShips(ShapeRenderer sr, ShmokeCamera camera) {
 		sr.setColor(PLAYER_COLOR);
-		sr.circle(con.playerShip.pos.x, con.playerShip.pos.y, con.playerShip.radius, 16);
+		if (con.playerShip.state == ENTITY_STATE.ALIVE) {
+			sr.circle(con.playerShip.pos.x, con.playerShip.pos.y, con.playerShip.radius, 16);
+		} else {
+			float r = con.playerShip.radius - con.playerShip.deadStateTime * (con.playerShip.radius);
+			float x = con.playerShip.pos.x;
+			float y = con.playerShip.pos.y;
+			sr.circle(x, y + con.playerShip.deadStateTime, r, 16);
+			sr.circle(x + con.playerShip.deadStateTime, y, r, 16);
+			sr.circle(x, y - con.playerShip.deadStateTime, r, 16);
+			sr.circle(x - con.playerShip.deadStateTime, y, r, 16);
+			
+			sr.circle(x + con.playerShip.deadStateTime, y + con.playerShip.deadStateTime, r+.1f, 16);
+			sr.circle(x - con.playerShip.deadStateTime, y + con.playerShip.deadStateTime, r+.1f, 16);
+			sr.circle(x + con.playerShip.deadStateTime, y - con.playerShip.deadStateTime, r+.1f, 16);
+			sr.circle(x - con.playerShip.deadStateTime, y - con.playerShip.deadStateTime, r+.1f, 16);
+		}
 	}
 	
 	private void drawBullets(ShapeRenderer sr, ShmokeCamera camera) {

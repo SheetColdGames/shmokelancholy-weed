@@ -19,10 +19,10 @@ import java.util.ArrayList;
 
 import me.sheetcoldgames.shmokeprototype.engine.Bullet;
 import me.sheetcoldgames.shmokeprototype.engine.Entity;
+import me.sheetcoldgames.shmokeprototype.engine.Entity.ENTITY_STATE;
 import me.sheetcoldgames.shmokeprototype.engine.MenuItem;
 import me.sheetcoldgames.shmokeprototype.engine.ShmokeCamera;
 
-import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -119,12 +119,13 @@ public class GameController {
 			moveMenu(true, dt);
 			movePause(false, dt);
 			updateBackground(camera, .3f);
+			updateEntities(camera, dt);
 		} else if (state == GAME_STATES.GAME) {
 			// from GAME, we can call PAUSE, WIN or LOSE
 			// move the menu away
 			moveMenu(false, dt);
 			movePause(false, dt);
-			updateEntities(camera);
+			updateEntities(camera, dt);
 			updateBackground(camera, .3f);
 		} else if (state == GAME_STATES.PAUSE) {
 			// from PAUSE, we can only call GAME
@@ -143,6 +144,9 @@ public class GameController {
 		shootPressed = false;
 		escapePressed = false;
 		fireBullets = false;
+		
+		// killing the player
+		playerShip.state = ENTITY_STATE.DEAD;
 		
 		// let's set all the player's bullet to hit
 		for (int k = 0; k < playerBullets.size(); k++) {
@@ -170,7 +174,12 @@ public class GameController {
 	
 	private void menuInput(Input input) {
 		if (input.buttons[Input.SHOOT] && !shootPressed) {
+			// let's go to the game
 			state = GAME_STATES.GAME;
+			// create the player
+			playerShip.state = ENTITY_STATE.ALIVE;
+			playerShip.deadStateTime = 0f;
+			
 			shootPressed = true;
 		} else if (!input.buttons[Input.SHOOT]) {
 			shootPressed = false;
@@ -181,6 +190,20 @@ public class GameController {
 	boolean fireBullets;
 	
 	private void gameInput(Entity player, Input input, float dt) {
+		if (player.aliveStateTime > 1f) {
+			playerShipInput(player, input, dt);
+		}
+		
+		
+		if (input.buttons[Input.ESCAPE] && !escapePressed) {
+			escapePressed = true;
+			state = GAME_STATES.PAUSE;
+		} else if (!input.buttons[Input.ESCAPE]) {
+			escapePressed = false;
+		}
+	}
+	
+	private void playerShipInput(Entity player, Input input, float dt) {
 		if (input.buttons[Input.UP]) {
 			player.vel.y += playerAcc * dt;
 		} else if (input.buttons[Input.DOWN]) {
@@ -203,13 +226,6 @@ public class GameController {
 		} else if (!input.buttons[Input.SHOOT]) {
 			shootPressed = false;
 			fireBullets = false;
-		}
-		
-		if (input.buttons[Input.ESCAPE] && !escapePressed) {
-			escapePressed = true;
-			state = GAME_STATES.PAUSE;
-		} else if (!input.buttons[Input.ESCAPE]) {
-			escapePressed = false;
 		}
 	}
 	
@@ -257,20 +273,37 @@ public class GameController {
 	
 	float maxSpeed = .32f;
 	
-	private void updateEntities(ShmokeCamera camera) {
-		// clamping the velocity
-		playerShip.vel.x = MathUtils.clamp(playerShip.vel.x, -maxSpeed, maxSpeed);
-		playerShip.vel.y = MathUtils.clamp(playerShip.vel.y, -maxSpeed, maxSpeed);
+	private void updateEntities(ShmokeCamera camera, float dt) {
+		if (playerShip.state == ENTITY_STATE.ALIVE) {
+			playerShip.aliveStateTime += dt;
+			// The player can only move after it appears on screen
+			// Make this code look prettier
+			if (playerShip.aliveStateTime < 1f) {
+				playerShip.pos.x = camera.position.x;
+				playerShip.pos.y = MathUtils.lerp(playerShip.pos.y, camera.position.y - camHeight/2f + playerShip.radius + 1f, .1f);
+			} else {
+				// clamping the velocity
+				playerShip.vel.x = MathUtils.clamp(playerShip.vel.x, -maxSpeed, maxSpeed);
+				playerShip.vel.y = MathUtils.clamp(playerShip.vel.y, -maxSpeed, maxSpeed);
+				
+				playerShip.pos.x += playerShip.vel.x;
+				playerShip.pos.y += playerShip.vel.y;
+				
+				playerShip.pos.x = MathUtils.clamp(playerShip.pos.x, 
+						camera.position.x-camWidth/2f+playerShip.radius, 
+						camera.position.x+camWidth/2f-playerShip.radius);
+				playerShip.pos.y = MathUtils.clamp(playerShip.pos.y, 
+						camera.position.y-camHeight/2f+playerShip.radius, 
+						camera.position.y+camHeight/2f-playerShip.radius);
+			}
+		} else if (playerShip.state == ENTITY_STATE.DEAD) {
+			playerShip.aliveStateTime = 0f;
+			playerShip.deadStateTime += dt;
+			if (playerShip.deadStateTime > 1f) {
+				playerShip.pos.set(camera.position.x, camera.position.y - camHeight);
+			}
+		}
 		
-		playerShip.pos.x += playerShip.vel.x;
-		playerShip.pos.y += playerShip.vel.y;
-		
-		playerShip.pos.x = MathUtils.clamp(playerShip.pos.x, 
-				camera.position.x-camWidth/2f+playerShip.radius, 
-				camera.position.x+camWidth/2f-playerShip.radius);
-		playerShip.pos.y = MathUtils.clamp(playerShip.pos.y, 
-				camera.position.y-camHeight/2f+playerShip.radius, 
-				camera.position.y+camHeight/2f-playerShip.radius);
 	}
 	
 	float playerBulletStateTime;

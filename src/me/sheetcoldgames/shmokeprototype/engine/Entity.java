@@ -25,12 +25,17 @@ public class Entity {
 	public float radius;
 	
 	public enum ENTITY_STATE {ALIVE, DEAD};
+	public ENTITY_STATE state;
+	
+	public float aliveStateTime = 0f;
+	public float deadStateTime = 0f;
 	
 	public Entity(float x, float y, float r) {
 		pos = new Vector2(x, y);
 		vel = new Vector2();
 		
 		radius = r;
+		state = ENTITY_STATE.ALIVE;
 	}
 	
 	public boolean overlaps(Entity ent) {
